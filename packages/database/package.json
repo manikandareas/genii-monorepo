@@ -1,0 +1,38 @@
+{
+  "name": "@genii/database",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/**"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "clean": "rimraf .turbo node_modules dist",
+    "dev": "tsup --watch",
+    "lint": "eslint src/",
+    "generate": "drizzle-kit generate:pg",
+    "migrate": "drizzle-kit migrate:pg",
+    "studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.9.0",
+    "drizzle-orm": "^0.30.4",
+    "pg": "^8.11.3",
+    "postgres": "^3.4.5",
+    "ws": "^8.18.1"
+  },
+  "devDependencies": {
+    "@genii/tsconfig": "*",
+    "@types/node": "^20.10.6",
+    "@types/pg": "^8.10.7",
+    "@types/ws": "^8.18.0",
+    "drizzle-kit": "^0.21.0",
+    "eslint": "^9.22.0",
+    "rimraf": "^5.0.5",
+    "tsup": "^8.0.2",
+    "typescript": "^5.8.2"
+  }
+}

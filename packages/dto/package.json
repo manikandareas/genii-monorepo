@@ -1,0 +1,30 @@
+{
+  "name": "@genii/dto",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/**"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "clean": "rimraf .turbo node_modules dist",
+    "dev": "tsup --watch",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@genii/tsconfig": "*",
+    "@types/node": "^20.10.6",
+    "eslint": "^9.22.0",
+    "rimraf": "^5.0.5",
+    "tsup": "^8.0.2",
+    "typescript": "^5.8.2"
+  }
+}

@@ -1,0 +1,185 @@
+{
+  "main": {
+    "id": "998f8a3578665b81",
+    "type": "split",
+    "children": [
+      {
+        "id": "41d4d88ce6d36443",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "6aa4c0d126b59832",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "adaptation-flow.md",
+                "mode": "preview",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "adaptation-flow"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "7fda65810883deab",
+    "type": "split",
+    "children": [
+      {
+        "id": "a1523cf13c6b166f",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "84aa3a4659b64fd5",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "7c5e4eef3d885bd2",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "d05d7f4985dd1f6e",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "8d2b3907efd47b84",
+    "type": "split",
+    "children": [
+      {
+        "id": "fc22d084d66011c1",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "698e803b9a523a0f",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "pages/user-pages.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for user-pages"
+            }
+          },
+          {
+            "id": "f0095516717a3419",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "pages/user-pages.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from user-pages"
+            }
+          },
+          {
+            "id": "95f224bdc74175c4",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "96877c33cbc3b0ee",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "pages/user-pages.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of user-pages"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false
+    }
+  },
+  "active": "6aa4c0d126b59832",
+  "lastOpenFiles": [
+    "thesis/Thesis.md",
+    "thesis/Proposal Vito.md",
+    "thesis/Thesis.pdf",
+    "thesis",
+    "database-types.md",
+    "pages/feature-implementation.md",
+    "pages/adaptation-architecture.md",
+    "pages/a.md",
+    "adaptation-flow.md",
+    "pages/admin-pages.md",
+    "pages/user-pages.md"
+  ]
+}

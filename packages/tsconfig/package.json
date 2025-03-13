@@ -1,0 +1,11 @@
+{
+  "name": "@genii/tsconfig",
+  "version": "0.0.0",
+  "private": true,
+  "license": "ISC",
+  "files": [
+    "base.json",
+    "nestjs.json",
+    "nextjs.json"
+  ]
+}
