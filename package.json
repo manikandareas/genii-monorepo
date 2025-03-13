@@ -16,7 +16,7 @@
     "digital-courses",
     "monorepo"
   ],
-  "author": "",
+  "author": "manikandareas",
   "license": "ISC",
   "devDependencies": {
     "eslint": "^9.22.0",
