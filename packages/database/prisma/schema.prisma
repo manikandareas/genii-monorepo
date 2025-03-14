@@ -1,0 +1,587 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
+}
+
+model account {
+  id                       String    @id
+  account_id               String
+  provider_id              String
+  user_id                  String
+  access_token             String?
+  refresh_token            String?
+  id_token                 String?
+  access_token_expires_at  DateTime? @db.Timestamp(6)
+  refresh_token_expires_at DateTime? @db.Timestamp(6)
+  scope                    String?
+  password                 String?
+  created_at               DateTime  @db.Timestamp(6)
+  updated_at               DateTime  @db.Timestamp(6)
+  user                     user      @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "account_user_id_user_id_fk")
+}
+
+model ai_generation_quota {
+  id           String    @id
+  user_id      String
+  weekly_quota Int
+  used_quota   Int       @default(0)
+  reset_date   DateTime? @db.Timestamptz(6)
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime? @default(now()) @db.Timestamptz(6)
+  user         user      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ai_generation_quota_user_id")
+
+  @@index([user_id], map: "idx_ai_generation_quota_user_id")
+}
+
+model answer_options {
+  id                   String                 @id
+  question_id          String
+  text                 String
+  is_correct           Boolean                @default(false)
+  explanation          String?
+  questions            questions              @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_answer_options_question_id")
+  quiz_attempts_detail quiz_attempts_detail[]
+
+  @@index([question_id], map: "idx_answer_options_question_id")
+}
+
+model badge {
+  id          String        @id
+  title       String
+  description String?
+  image_url   String?
+  module_id   String
+  modules     modules       @relation(fields: [module_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_badge_module_id")
+  user_badges user_badges[]
+
+  @@index([module_id], map: "idx_badge_module_id")
+}
+
+model banners {
+  id          String    @id
+  title       String
+  description String
+  image_url   String?
+  link        String?
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model bookmarks {
+  id                  String    @id
+  user_id             String
+  unit_id             String
+  title               String?
+  description         String?
+  position_in_content Int?
+  created_at          DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime? @default(now()) @db.Timestamptz(6)
+  units               units     @relation(fields: [unit_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user                user      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, unit_id, position_in_content], map: "idx_unique_user_unit_bookmark")
+  @@index([unit_id], map: "idx_bookmarks_unit_id")
+  @@index([user_id], map: "idx_bookmarks_user_id")
+}
+
+model certificates {
+  id                String              @id
+  course_id         String
+  description       String?
+  title             String
+  image_url         String?
+  courses           courses             @relation(fields: [course_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_certificates_course_id")
+  user_certificates user_certificates[]
+
+  @@index([course_id], map: "idx_certificates_course_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model content_versions {
+  id                      String                     @id
+  unit_id                 String
+  version                 Int                        @default(1)
+  content_text            String?
+  content_html            String?
+  content_embedding       Unsupported("vector(384)")
+  style_embedding         Unsupported("vector(384)")
+  source                  content_generation_source  @default(default)
+  style                   content_style?
+  complexity_metrics      Json?                      @db.Json
+  created_at              DateTime                   @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime                   @default(now()) @db.Timestamptz(6)
+  units                   units                      @relation(fields: [unit_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "content_versions_unit_id_fkey")
+  personalization_history personalization_history[]
+
+  @@index([unit_id], map: "idx_content_versions_unit_id")
+}
+
+model course_categories {
+  id      String    @id
+  name    String
+  courses courses[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model courses {
+  id                String            @id
+  title             String
+  description       String
+  difficulty        difficulty_level
+  trailer           String?
+  thumbnail         String?
+  category_id       String
+  additional_info   Json?
+  is_published      Boolean           @default(false)
+  total_enrollments Int               @default(0)
+  rating            Decimal           @default(0) @db.Decimal(2, 1)
+  is_premium        Boolean           @default(false)
+  published_at      DateTime?         @db.Timestamptz(6)
+  created_at        DateTime?         @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime?         @default(now()) @db.Timestamptz(6)
+  certificates      certificates[]
+  course_categories course_categories @relation(fields: [category_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_courses_category_id")
+  feedbacks         feedbacks[]
+  modules           modules[]
+  quiz              quiz[]
+  user_courses      user_courses[]
+
+  @@index([category_id], map: "idx_courses_category_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model feedbacks {
+  id         String    @id
+  user_id    String
+  course_id  String
+  rating     Decimal   @default(0) @db.Decimal(2, 1)
+  comments   String?
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+  courses    courses   @relation(fields: [course_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_feedbacks_course_id")
+  user       user      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_feedbacks_user_id")
+
+  @@index([course_id], map: "idx_feedbacks_course_id")
+  @@index([user_id], map: "idx_feedbacks_user_id")
+}
+
+model modules {
+  id              String   @id
+  title           String
+  description     String?
+  course_id       String
+  order_index     Int
+  estimated_hours Float?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+  courses         courses  @relation(fields: [course_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_modules_course_id")
+  badge           badge[]
+  quiz            quiz[]
+  units           units[]
+
+  @@index([course_id], map: "idx_modules_course_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model notes {
+  id                  String    @id
+  user_id             String
+  unit_id             String
+  content             String
+  position_in_content Int?
+  highlight_text      String?
+  highlight_start     Int?
+  highlight_end       Int?
+  is_voice_note       Boolean?  @default(false)
+  voice_note_url      String
+  created_at          DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime? @default(now()) @db.Timestamptz(6)
+  units               units     @relation(fields: [unit_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user                user      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([unit_id], map: "idx_notes_unit_id")
+  @@index([user_id], map: "idx_notes_user_id")
+}
+
+model notifications {
+  id         String    @id
+  title      String
+  message    String
+  content    String?
+  is_read    Boolean?  @default(false)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  user_id    String
+  user       user      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_notifications_user_id")
+
+  @@index([user_id], map: "idx_notifications_user_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model personalization_history {
+  id                    String                     @id
+  user_id               String
+  content_version_id    String
+  interaction_date      DateTime                   @db.Timestamptz(6)
+  adaptation_type       String?
+  context_embedding     Unsupported("vector(384)")
+  effectiveness_metrics Json?                      @db.Json
+  created_at            DateTime                   @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime                   @default(now()) @db.Timestamptz(6)
+  content_versions      content_versions           @relation(fields: [content_version_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_personalization_history_content_version_id")
+  user                  user                       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_personalization_history_user_id")
+
+  @@index([content_version_id], map: "idx_personalization_history_content_version_id")
+  @@index([user_id], map: "idx_personalization_history_user_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model progress {
+  id                    String                     @id
+  user_id               String
+  unit_id               String
+  status                progress_status            @default(NOT_STARTED)
+  completion_percentage Float?                     @default(0)
+  time_spent_seconds    Int?                       @default(0)
+  last_position_seconds Int?                       @default(0)
+  completed_at          DateTime?                  @db.Timestamptz(6)
+  notes_count           Int?                       @default(0)
+  bookmark_count        Int?                       @default(0)
+  performance_score     Float?                     @default(0)
+  performance_embedding Unsupported("vector(384)")
+  adaptation_impact     Json?                      @db.Json
+  created_at            DateTime                   @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime                   @default(now()) @db.Timestamptz(6)
+  unit                  units                      @relation(fields: [unit_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_progress_unit_id")
+  user                  user                       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_progress_user_id")
+
+  @@unique([user_id, unit_id], map: "progress_user_id_unit_id_key")
+  @@index([unit_id], map: "idx_progress_unit_id")
+  @@index([user_id], map: "idx_progress_user_id")
+}
+
+model questions {
+  id                   String                 @id
+  text                 String
+  quiz_id              String
+  point_value          Int
+  created_at           DateTime?              @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime?              @default(now()) @db.Timestamptz(6)
+  type                 question_type          @default(multiple_choice)
+  answer_options       answer_options[]
+  quiz                 quiz                   @relation(fields: [quiz_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_questions_quiz_id")
+  quiz_attempts_detail quiz_attempts_detail[]
+
+  @@index([quiz_id], map: "idx_questions_quiz_id")
+}
+
+model quiz {
+  id             String          @id
+  title          String
+  module_id      String
+  description    String?
+  total_question Int?
+  passing_score  Int
+  max_attempts   Int             @default(3)
+  time_limit     Int?
+  created_at     DateTime?       @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime?       @default(now()) @db.Timestamptz(6)
+  as_assessment  Boolean         @default(false)
+  course_id      String
+  questions      questions[]
+  courses        courses         @relation(fields: [course_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_quiz_course_id")
+  modules        modules         @relation(fields: [module_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_quiz_module_id")
+  quiz_attempts  quiz_attempts[]
+
+  @@index([course_id], map: "idx_quiz_course_id")
+  @@index([module_id], map: "idx_quiz_module_id")
+}
+
+model quiz_attempts {
+  id                   String                 @id
+  quiz_id              String
+  user_id              String
+  total_score          Int                    @default(0)
+  start_time           DateTime?              @default(now()) @db.Timestamptz(6)
+  end_time             DateTime?              @db.Timestamptz(6)
+  status               quiz_status            @default(STARTED)
+  next_attempt_allowed DateTime?              @db.Timestamptz(6)
+  quiz                 quiz                   @relation(fields: [quiz_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_quiz_attempts_quiz_id")
+  user                 user                   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_quiz_attempts_user_id")
+  quiz_attempts_detail quiz_attempts_detail[]
+
+  @@index([quiz_id], map: "idx_quiz_attempts_quiz_id")
+  @@index([user_id], map: "idx_quiz_attempts_user_id")
+}
+
+model quiz_attempts_detail {
+  id                 String          @id
+  quiz_attempt_id    String
+  question_id        String
+  selected_answer_id String?
+  is_correct         Boolean         @default(false)
+  created_at         DateTime?       @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime?       @default(now()) @db.Timestamptz(6)
+  questions          questions       @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_quiz_attempts_detail_question_id")
+  quiz_attempts      quiz_attempts   @relation(fields: [quiz_attempt_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_quiz_attempts_detail_quiz_attempt_id")
+  answer_options     answer_options? @relation(fields: [selected_answer_id], references: [id], onUpdate: NoAction, map: "FK_quiz_attempts_detail_selected_answer_id")
+
+  @@index([question_id], map: "idx_quiz_attempts_detail_question_id")
+  @@index([quiz_attempt_id], map: "idx_quiz_attempts_detail_quiz_attempt_id")
+  @@index([selected_answer_id], map: "idx_quiz_attempts_detail_selected_answer_id")
+}
+
+model session {
+  id         String   @id
+  expires_at DateTime @db.Timestamp(6)
+  token      String   @unique(map: "session_token_unique")
+  created_at DateTime @db.Timestamp(6)
+  updated_at DateTime @db.Timestamp(6)
+  ip_address String?
+  user_agent String?
+  user_id    String
+  user       user     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "session_user_id_user_id_fk")
+}
+
+model subscriptions {
+  id                String            @id
+  user_id           String
+  type              subscription_type @default(FREE)
+  starts_at         DateTime?         @default(now()) @db.Timestamptz(6)
+  ends_at           DateTime?         @db.Timestamptz(6)
+  is_active         Boolean?          @default(true)
+  subscription_data Json
+  created_at        DateTime?         @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime?         @default(now()) @db.Timestamptz(6)
+  user              user              @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_subscriptions_user_id")
+
+  @@index([user_id], map: "idx_subscriptions_user_id")
+}
+
+model units {
+  id                String             @id
+  module_id         String
+  title             String
+  description       String?
+  estimated_minutes Int?
+  content           String?
+  type              unit_type          @default(TEXT)
+  order             Int
+  is_active         Boolean            @default(true)
+  created_at        DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime           @default(now()) @db.Timestamptz(6)
+  bookmarks         bookmarks[]
+  content_versions  content_versions[]
+  notes             notes[]
+  progress          progress[]
+  modules           modules            @relation(fields: [module_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_units_module_id")
+
+  @@index([module_id], map: "idx_units_module_id")
+}
+
+model user {
+  id                        String                      @id
+  name                      String
+  email                     String                      @unique(map: "user_email_unique")
+  email_verified            Boolean
+  username                  String?
+  is_admin                  Boolean?                    @default(false)
+  is_already_onboard        Boolean?                    @default(false)
+  image                     String?
+  created_at                DateTime                    @db.Timestamp(6)
+  updated_at                DateTime                    @db.Timestamp(6)
+  account                   account[]
+  ai_generation_quota       ai_generation_quota[]
+  bookmarks                 bookmarks[]
+  feedbacks                 feedbacks[]
+  notes                     notes[]
+  notifications             notifications[]
+  personalization_history   personalization_history[]
+  progress                  progress[]
+  quiz_attempts             quiz_attempts[]
+  session                   session[]
+  subscriptions             subscriptions[]
+  user_badges               user_badges[]
+  user_certificates         user_certificates[]
+  user_courses              user_courses[]
+  user_learning_preferences user_learning_preferences[]
+}
+
+model user_badges {
+  id        String    @id
+  user_id   String
+  badge_id  String
+  issued_at DateTime? @default(now()) @db.Timestamptz(6)
+  badge     badge     @relation(fields: [badge_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_user_badges_badge_id")
+  user      user      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_user_badges_user_id")
+
+  @@index([badge_id], map: "idx_user_badges_badge_id")
+  @@index([user_id], map: "idx_user_badges_user_id")
+}
+
+model user_certificates {
+  id             String       @id
+  user_id        String
+  certificate_id String
+  issued_at      DateTime?    @default(now()) @db.Timestamptz(6)
+  certificates   certificates @relation(fields: [certificate_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_user_certificates_certificate_id")
+  user           user         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_user_certificates_user_id")
+
+  @@index([certificate_id], map: "idx_user_certificates_certificate_id")
+  @@index([user_id], map: "idx_user_certificates_user_id")
+}
+
+model user_courses {
+  id                String    @id
+  user_id           String
+  course_id         String
+  time_spent        Int?      @default(0)
+  last_interaction  DateTime? @db.Timestamptz(6)
+  learning_streak   Int?      @default(0)
+  completion_rate   Int       @default(0)
+  is_completed      Boolean   @default(false)
+  current_module_id String?
+  next_module_id    String?
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime? @default(now()) @db.Timestamptz(6)
+  courses           courses   @relation(fields: [course_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_user_courses_course_id")
+  user              user      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_user_courses_user_id")
+
+  @@index([course_id], map: "idx_user_courses_course_id")
+  @@index([current_module_id], map: "idx_user_courses_current_module_id")
+  @@index([next_module_id], map: "idx_user_courses_next_module_id")
+  @@index([user_id], map: "idx_user_courses_user_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_learning_preferences {
+  id                   String                     @id
+  user_id              String
+  preference_type      preference_type
+  context_id           String?
+  settings             Json                       @db.Json
+  created_at           DateTime                   @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime                   @default(now()) @db.Timestamptz(6)
+  preference_embedding Unsupported("vector(384)")
+  adaptation_metrics   Json?                      @db.Json
+  user                 user                       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_user_learning_preferences_user_id")
+
+  @@index([user_id], map: "idx_user_learning_preferences_user_id")
+}
+
+model verification {
+  id         String    @id
+  identifier String
+  value      String
+  expires_at DateTime  @db.Timestamp(6)
+  created_at DateTime? @db.Timestamp(6)
+  updated_at DateTime? @db.Timestamp(6)
+}
+
+/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+enum content_generation_source {
+  default
+  ai_generated
+  ai_modified
+}
+
+/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+enum content_style {
+  theoretical
+  practical
+  example_based
+  project_based
+  interactive
+}
+
+enum content_type {
+  VIDEO
+  TEXT
+  INTERACTIVE
+}
+
+enum difficulty_level {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+enum learning_style {
+  visual
+  auditory
+  reading
+  kinesthetic
+}
+
+enum motivation_level {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+enum preference_type {
+  onboarding
+  content
+  quiz
+}
+
+enum progress_status {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum question_type {
+  multiple_choice
+  multiple_response
+  true_false
+}
+
+enum quiz_status {
+  STARTED
+  COMPLETED
+  FAILED
+}
+
+enum recommendation_dependency_type {
+  prerequisite
+  corequisite
+  recommended_before
+}
+
+enum recommendation_factor_type {
+  skill_progression
+  career_alignment
+  learning_style_match
+}
+
+enum recommendation_feedback_type {
+  path_too_long
+  good_progression
+  missing_topics
+  too_advanced
+}
+
+enum recommendation_type {
+  skill_path
+  interest_based
+  career_path
+  peer_learning
+}
+
+enum subscription_type {
+  FREE
+  PREMIUM
+}
+
+enum unit_type {
+  VIDEO
+  TEXT
+  INTERACTIVE
+}

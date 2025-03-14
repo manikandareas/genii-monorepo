@@ -1,60 +1,42 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { DB, Course } from "@genii/database";
+import {
+  Injectable,
+  NotFoundException,
+  Inject,
+  InternalServerErrorException,
+} from "@nestjs/common";
 
 @Injectable()
 export class CoursesService {
-  // This is a placeholder - in a real implementation, you would:
-  // 1. Connect to the database
-  // 2. Perform CRUD operations
+  constructor(@Inject("DATABASE_CLIENT") private readonly db: DB) {}
 
-  async findAll() {
-    // Placeholder data
-    return [
-      {
-        id: "1",
-        title: "Introduction to TypeScript",
-        description: "Learn the basics of TypeScript",
-        authorId: "1",
-        level: "beginner",
-        price: 0,
-      },
-      {
-        id: "2",
-        title: "Advanced React Patterns",
-        description: "Master advanced React patterns and techniques",
-        authorId: "2",
-        level: "advanced",
-        price: 29,
-      },
-    ];
+  async findAll(): Promise<Course[]> {
+    try {
+      // Using Prisma client to fetch all courses
+      return await this.db.courses.findMany();
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+      throw new InternalServerErrorException("Failed to retrieve courses");
+    }
   }
 
-  async findOne(id: string) {
-    // Placeholder data
-    const courses = [
-      {
-        id: "1",
-        title: "Introduction to TypeScript",
-        description: "Learn the basics of TypeScript",
-        authorId: "1",
-        level: "beginner",
-        price: 0,
-      },
-      {
-        id: "2",
-        title: "Advanced React Patterns",
-        description: "Master advanced React patterns and techniques",
-        authorId: "2",
-        level: "advanced",
-        price: 29,
-      },
-    ];
+  async findOne(id: string): Promise<Course> {
+    try {
+      const course = await this.db.courses.findUnique({
+        where: { id },
+      });
 
-    const course = courses.find((course) => course.id === id);
+      if (!course) {
+        throw new NotFoundException(`Course with ID ${id} not found`);
+      }
 
-    if (!course) {
-      throw new NotFoundException(`Course with ID ${id} not found`);
+      return course;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error(`Error finding course ${id}:`, error);
+      throw new InternalServerErrorException(`Failed to retrieve course ${id}`);
     }
-
-    return course;
   }
 }

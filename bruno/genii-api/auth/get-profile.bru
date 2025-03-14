@@ -1,0 +1,27 @@
+meta {
+  name: Get Profile
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/auth/profile
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("User profile data is returned", function() {
+    expect(res.body).to.have.property("id");
+    expect(res.body).to.have.property("name");
+    expect(res.body).to.have.property("email");
+  });
+}

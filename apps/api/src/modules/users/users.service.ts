@@ -1,32 +1,44 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { DB, User } from "@genii/database";
+import {
+  Injectable,
+  NotFoundException,
+  Inject,
+  InternalServerErrorException,
+} from "@nestjs/common";
 
 @Injectable()
 export class UsersService {
-  // This is a placeholder - in a real implementation, you would:
-  // 1. Connect to the database
-  // 2. Perform CRUD operations
+  constructor(@Inject("DATABASE_CLIENT") private readonly db: DB) {}
 
-  async findAll() {
-    // Placeholder data
-    return [
-      { id: "1", name: "John Doe", email: "john@example.com" },
-      { id: "2", name: "Jane Smith", email: "jane@example.com" },
-    ];
+  // Mock data for fallback
+
+  async findAll(): Promise<User[]> {
+    try {
+      // Using Prisma client to fetch all users
+      return await this.db.user.findMany();
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      throw new InternalServerErrorException("Failed to retrieve users");
+    }
   }
 
-  async findOne(id: string) {
-    // Placeholder data
-    const users = [
-      { id: "1", name: "John Doe", email: "john@example.com" },
-      { id: "2", name: "Jane Smith", email: "jane@example.com" },
-    ];
+  async findOne(id: string): Promise<User> {
+    try {
+      const user = await this.db.user.findUnique({
+        where: { id },
+      });
 
-    const user = users.find((user) => user.id === id);
+      if (!user) {
+        throw new NotFoundException(`User with ID ${id} not found`);
+      }
 
-    if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+      return user;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error(`Error finding user ${id}:`, error);
+      throw new InternalServerErrorException(`Failed to retrieve user ${id}`);
     }
-
-    return user;
   }
 }
