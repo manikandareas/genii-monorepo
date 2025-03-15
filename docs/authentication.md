@@ -63,7 +63,7 @@ JWT_EXPIRES_IN=1d
 ```
 NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=your-nextauth-secret-key-change-in-production
-NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
 ## Authentication Flow

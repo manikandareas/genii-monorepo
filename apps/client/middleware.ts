@@ -1,1 +1,12 @@
-import { NextResponse } from "next/server"; import { withAuth } from "next-auth/middleware"; export default withAuth(function middleware(req) { const { pathname } = req.nextUrl; const token = req.nextauth?.token; if (pathname.startsWith("/admin") && !token?.isAdmin) { return NextResponse.redirect(new URL("/login", req.url)); } if (!pathname.startsWith("/onboarding") && !pathname.startsWith("/api") && token && !token.isAlreadyOnboard) { return NextResponse.redirect(new URL("/onboarding", req.url)); } return NextResponse.next(); }, { callbacks: { authorized: ({ token }) => !!token, }, }); export const config = { matcher: [ "/courses/:path*", "/profile/:path*", "/admin/:path*", "/notes/:path*", "/bookmarks/:path*", "/onboarding/:path*", ], };
+import { clerkMiddleware } from "@clerk/nextjs/server";
+
+export default clerkMiddleware();
+
+export const config = {
+  matcher: [
+    // Skip Next.js internals and all static files, unless found in search params
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    // Always run for API routes
+    "/(api|trpc)(.*)",
+  ],
+};

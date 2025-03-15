@@ -1,10 +1,11 @@
 {
-  "extends": "@genii/tsconfig/base.json",
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["node_modules", "dist"],
+  "extends": "@genii/tsconfig/react-library.json",
   "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "jsx": "react-jsx"
-  }
+    "baseUrl": ".",
+    "paths": {
+      "@genii/ui/*": ["./src/*"]
+    }
+  },
+  "include": ["."],
+  "exclude": ["node_modules", "dist"]
 }
