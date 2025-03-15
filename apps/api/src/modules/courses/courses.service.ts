@@ -1,4 +1,5 @@
-import { DB, Course } from "@genii/database";
+import { PrismaService } from "@/common/database.service";
+import { DB } from "@genii/database";
 import {
   Injectable,
   NotFoundException,
@@ -8,9 +9,9 @@ import {
 
 @Injectable()
 export class CoursesService {
-  constructor(@Inject("DATABASE_CLIENT") private readonly db: DB) {}
+  constructor(private readonly db: PrismaService) {}
 
-  async findAll(): Promise<Course[]> {
+  async findAll() {
     try {
       // Using Prisma client to fetch all courses
       return await this.db.courses.findMany();
@@ -20,7 +21,7 @@ export class CoursesService {
     }
   }
 
-  async findOne(id: string): Promise<Course> {
+  async findOne(id: string) {
     try {
       const course = await this.db.courses.findUnique({
         where: { id },

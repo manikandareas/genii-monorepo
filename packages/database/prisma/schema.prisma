@@ -9,22 +9,25 @@ datasource db {
   extensions = [vector]
 }
 
-model account {
-  id                       String    @id
-  account_id               String
-  provider_id              String
-  user_id                  String
-  access_token             String?
-  refresh_token            String?
-  id_token                 String?
-  access_token_expires_at  DateTime? @db.Timestamp(6)
-  refresh_token_expires_at DateTime? @db.Timestamp(6)
-  scope                    String?
-  password                 String?
-  created_at               DateTime  @db.Timestamp(6)
-  updated_at               DateTime  @db.Timestamp(6)
-  user                     user      @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "account_user_id_user_id_fk")
-}
+// model account {
+//   id                       String    @id @default(cuid())
+//   account_id               String
+//   provider_id              String
+//   user_id                  String
+//   access_token             String?
+//   refresh_token            String?
+//   id_token                 String?
+//   access_token_expires_at  DateTime? @db.Timestamp(6)
+//   refresh_token_expires_at DateTime? @db.Timestamp(6)
+//   scope                    String?
+//   password                 String? // For local authentication
+//   created_at               DateTime  @default(now()) @db.Timestamp(6)
+//   updated_at               DateTime  @default(now()) @updatedAt @db.Timestamp(6)
+//   user                     user      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "account_user_id_user_id_fk")
+
+//   @@index([provider_id, account_id], map: "index_account_provider_account")
+//   @@index([user_id], map: "index_account_user_id")
+// }
 
 model ai_generation_quota {
   id           String    @id
@@ -103,22 +106,28 @@ model certificates {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model content_versions {
-  id                      String                     @id
-  unit_id                 String
-  version                 Int                        @default(1)
-  content_text            String?
-  content_html            String?
-  content_embedding       Unsupported("vector(384)")
-  style_embedding         Unsupported("vector(384)")
-  source                  content_generation_source  @default(default)
-  style                   content_style?
-  complexity_metrics      Json?                      @db.Json
-  created_at              DateTime                   @default(now()) @db.Timestamptz(6)
-  updated_at              DateTime                   @default(now()) @db.Timestamptz(6)
-  units                   units                      @relation(fields: [unit_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "content_versions_unit_id_fkey")
-  personalization_history personalization_history[]
+  id                    String                     @id
+  unit_id               String
+  content               String
+  is_default            Boolean                    @default(false)
+  contentHash           String?
+  generation_parameters Json?
+  usage_count           Int?                       @default(1)
+  assessment_date       DateTime?                  @db.Timestamptz(6)
+  created_at            DateTime?                  @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime?                  @default(now()) @db.Timestamptz(6)
+  type                  content_type?              @default(TEXT)
+  generation_source     content_generation_source? @default(default)
+  content_embedding     Unsupported("vector")?
+  style_embedding       Unsupported("vector")?
+  complexity_metrics    Json?
+  units                 units                      @relation(fields: [unit_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "content_versions_unit_id_fkey")
 
   @@index([unit_id], map: "idx_content_versions_unit_id")
+  @@index([content_embedding], map: "idx_content_embedding")
+  @@index([contentHash], map: "idx_content_versions_content_hash")
+  @@index([assessment_date], map: "idx_content_versions_expires")
+  @@index([style_embedding], map: "idx_style_embedding")
 }
 
 model course_categories {
@@ -171,18 +180,22 @@ model feedbacks {
 }
 
 model modules {
-  id              String   @id
-  title           String
-  description     String?
-  course_id       String
-  order_index     Int
-  estimated_hours Float?
-  created_at      DateTime @default(now()) @db.Timestamptz(6)
-  updated_at      DateTime @default(now()) @db.Timestamptz(6)
-  courses         courses  @relation(fields: [course_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_modules_course_id")
-  badge           badge[]
-  quiz            quiz[]
-  units           units[]
+  id                                                   String                    @id
+  title                                                String
+  description                                          String?
+  is_personalizable                                    Boolean                   @default(false)
+  order_index                                          Int
+  course_id                                            String
+  created_at                                           DateTime?                 @default(now()) @db.Timestamptz(6)
+  updated_at                                           DateTime?                 @default(now()) @db.Timestamptz(6)
+  badge                                                badge[]
+  courses                                              courses                   @relation(fields: [course_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_modules_course_id")
+  personalization_history                              personalization_history[]
+  progress                                             progress[]
+  quiz                                                 quiz[]
+  units                                                units[]
+  user_courses_user_courses_current_module_idTomodules user_courses[]            @relation("user_courses_current_module_idTomodules")
+  user_courses_user_courses_next_module_idTomodules    user_courses[]            @relation("user_courses_next_module_idTomodules")
 
   @@index([course_id], map: "idx_modules_course_id")
 }
@@ -198,7 +211,7 @@ model notes {
   highlight_start     Int?
   highlight_end       Int?
   is_voice_note       Boolean?  @default(false)
-  voice_note_url      String
+  voice_note_url      String?
   created_at          DateTime? @default(now()) @db.Timestamptz(6)
   updated_at          DateTime? @default(now()) @db.Timestamptz(6)
   units               units     @relation(fields: [unit_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -223,45 +236,44 @@ model notifications {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model personalization_history {
-  id                    String                     @id
-  user_id               String
-  content_version_id    String
-  interaction_date      DateTime                   @db.Timestamptz(6)
-  adaptation_type       String?
-  context_embedding     Unsupported("vector(384)")
-  effectiveness_metrics Json?                      @db.Json
-  created_at            DateTime                   @default(now()) @db.Timestamptz(6)
-  updated_at            DateTime                   @default(now()) @db.Timestamptz(6)
-  content_versions      content_versions           @relation(fields: [content_version_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_personalization_history_content_version_id")
-  user                  user                       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_personalization_history_user_id")
+  id                      String                 @id
+  user_id                 String
+  module_id               String
+  previous_content_state  Json?
+  new_content_state       Json?
+  personalization_context Json?
+  created_at              DateTime?              @default(now()) @db.Timestamptz(6)
+  context_embedding       Unsupported("vector")?
+  effectiveness_metrics   Json?
+  modules                 modules                @relation(fields: [module_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user                    user                   @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_personalization_history_user_id")
 
-  @@index([content_version_id], map: "idx_personalization_history_content_version_id")
-  @@index([user_id], map: "idx_personalization_history_user_id")
+  @@index([context_embedding], map: "idx_context_embedding")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model progress {
-  id                    String                     @id
-  user_id               String
-  unit_id               String
-  status                progress_status            @default(NOT_STARTED)
-  completion_percentage Float?                     @default(0)
-  time_spent_seconds    Int?                       @default(0)
-  last_position_seconds Int?                       @default(0)
-  completed_at          DateTime?                  @db.Timestamptz(6)
-  notes_count           Int?                       @default(0)
-  bookmark_count        Int?                       @default(0)
-  performance_score     Float?                     @default(0)
-  performance_embedding Unsupported("vector(384)")
-  adaptation_impact     Json?                      @db.Json
-  created_at            DateTime                   @default(now()) @db.Timestamptz(6)
-  updated_at            DateTime                   @default(now()) @db.Timestamptz(6)
-  unit                  units                      @relation(fields: [unit_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_progress_unit_id")
-  user                  user                       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_progress_user_id")
+  id                                    String                 @id
+  user_id                               String
+  module_id                             String
+  progress_status                       progress_status        @default(NOT_STARTED)
+  ai_suggestion                         String?
+  current_unit_id                       String?
+  next_unit_id                          String?
+  created_at                            DateTime?              @default(now()) @db.Timestamptz(6)
+  updated_at                            DateTime?              @default(now()) @db.Timestamptz(6)
+  performance_embedding                 Unsupported("vector")?
+  adaptation_impact                     Json?
+  units_progress_current_unit_idTounits units?                 @relation("progress_current_unit_idTounits", fields: [current_unit_id], references: [id], onUpdate: NoAction, map: "FK_progress_current_unit_id")
+  modules                               modules                @relation(fields: [module_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_progress_module_id")
+  units_progress_next_unit_idTounits    units?                 @relation("progress_next_unit_idTounits", fields: [next_unit_id], references: [id], onUpdate: NoAction, map: "FK_progress_next_unit_id")
+  user                                  user                   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_progress_user_id")
 
-  @@unique([user_id, unit_id], map: "progress_user_id_unit_id_key")
-  @@index([unit_id], map: "idx_progress_unit_id")
   @@index([user_id], map: "idx_progress_user_id")
+  @@index([next_unit_id], map: "idx_next_current_unit_id")
+  @@index([performance_embedding], map: "idx_performance_embedding")
+  @@index([current_unit_id], map: "idx_progress_current_unit_id")
+  @@index([module_id], map: "idx_progress_module_id")
 }
 
 model questions {
@@ -335,17 +347,19 @@ model quiz_attempts_detail {
   @@index([selected_answer_id], map: "idx_quiz_attempts_detail_selected_answer_id")
 }
 
-model session {
-  id         String   @id
-  expires_at DateTime @db.Timestamp(6)
-  token      String   @unique(map: "session_token_unique")
-  created_at DateTime @db.Timestamp(6)
-  updated_at DateTime @db.Timestamp(6)
-  ip_address String?
-  user_agent String?
-  user_id    String
-  user       user     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "session_user_id_user_id_fk")
-}
+// model session {
+//   id         String   @id @default(cuid())
+//   expires_at DateTime @db.Timestamp(6)
+//   token      String   @unique(map: "session_token_unique")
+//   created_at DateTime @default(now()) @db.Timestamp(6)
+//   updated_at DateTime @default(now()) @updatedAt @db.Timestamp(6)
+//   ip_address String?
+//   user_agent String?
+//   user_id    String
+//   user       user     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "session_user_id_user_id_fk")
+
+//   @@index([user_id], map: "index_session_user_id")
+// }
 
 model subscriptions {
   id                String            @id
@@ -363,38 +377,33 @@ model subscriptions {
 }
 
 model units {
-  id                String             @id
-  module_id         String
-  title             String
-  description       String?
-  estimated_minutes Int?
-  content           String?
-  type              unit_type          @default(TEXT)
-  order             Int
-  is_active         Boolean            @default(true)
-  created_at        DateTime           @default(now()) @db.Timestamptz(6)
-  updated_at        DateTime           @default(now()) @db.Timestamptz(6)
-  bookmarks         bookmarks[]
-  content_versions  content_versions[]
-  notes             notes[]
-  progress          progress[]
-  modules           modules            @relation(fields: [module_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_units_module_id")
+  id                                       String             @id
+  title                                    String
+  type                                     unit_type
+  order_index                              Int
+  module_id                                String
+  bookmarks                                bookmarks[]
+  content_versions                         content_versions[]
+  notes                                    notes[]
+  progress_progress_current_unit_idTounits progress[]         @relation("progress_current_unit_idTounits")
+  progress_progress_next_unit_idTounits    progress[]         @relation("progress_next_unit_idTounits")
+  modules                                  modules            @relation(fields: [module_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_units_module_id")
 
   @@index([module_id], map: "idx_units_module_id")
 }
 
 model user {
-  id                        String                      @id
+  id                        String                      @id @default(cuid())
   name                      String
   email                     String                      @unique(map: "user_email_unique")
-  email_verified            Boolean
-  username                  String?
+  email_verified            Boolean                     @default(false)
+  username                  String?                     @unique
   is_admin                  Boolean?                    @default(false)
   is_already_onboard        Boolean?                    @default(false)
   image                     String?
-  created_at                DateTime                    @db.Timestamp(6)
-  updated_at                DateTime                    @db.Timestamp(6)
-  account                   account[]
+  created_at                DateTime                    @default(now()) @db.Timestamp(6)
+  updated_at                DateTime                    @updatedAt @db.Timestamp(6)
+  // account                   account[]
   ai_generation_quota       ai_generation_quota[]
   bookmarks                 bookmarks[]
   feedbacks                 feedbacks[]
@@ -403,7 +412,7 @@ model user {
   personalization_history   personalization_history[]
   progress                  progress[]
   quiz_attempts             quiz_attempts[]
-  session                   session[]
+  // session                   session[]
   subscriptions             subscriptions[]
   user_badges               user_badges[]
   user_certificates         user_certificates[]
@@ -436,20 +445,22 @@ model user_certificates {
 }
 
 model user_courses {
-  id                String    @id
-  user_id           String
-  course_id         String
-  time_spent        Int?      @default(0)
-  last_interaction  DateTime? @db.Timestamptz(6)
-  learning_streak   Int?      @default(0)
-  completion_rate   Int       @default(0)
-  is_completed      Boolean   @default(false)
-  current_module_id String?
-  next_module_id    String?
-  created_at        DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at        DateTime? @default(now()) @db.Timestamptz(6)
-  courses           courses   @relation(fields: [course_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_user_courses_course_id")
-  user              user      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_user_courses_user_id")
+  id                                              String    @id
+  user_id                                         String
+  course_id                                       String
+  time_spent                                      Int?      @default(0)
+  last_interaction                                DateTime? @db.Timestamptz(6)
+  learning_streak                                 Int?      @default(0)
+  completion_rate                                 Int       @default(0)
+  is_completed                                    Boolean   @default(false)
+  current_module_id                               String?
+  next_module_id                                  String?
+  created_at                                      DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at                                      DateTime? @default(now()) @db.Timestamptz(6)
+  courses                                         courses   @relation(fields: [course_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_user_courses_course_id")
+  modules_user_courses_current_module_idTomodules modules?  @relation("user_courses_current_module_idTomodules", fields: [current_module_id], references: [id], onUpdate: NoAction, map: "FK_user_courses_current_module_id")
+  modules_user_courses_next_module_idTomodules    modules?  @relation("user_courses_next_module_idTomodules", fields: [next_module_id], references: [id], onUpdate: NoAction, map: "FK_user_courses_next_module_id")
+  user                                            user      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_user_courses_user_id")
 
   @@index([course_id], map: "idx_user_courses_course_id")
   @@index([current_module_id], map: "idx_user_courses_current_module_id")
@@ -459,28 +470,31 @@ model user_courses {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model user_learning_preferences {
-  id                   String                     @id
+  id                   String                 @id
   user_id              String
   preference_type      preference_type
   context_id           String?
-  settings             Json                       @db.Json
-  created_at           DateTime                   @default(now()) @db.Timestamptz(6)
-  updated_at           DateTime                   @default(now()) @db.Timestamptz(6)
-  preference_embedding Unsupported("vector(384)")
-  adaptation_metrics   Json?                      @db.Json
-  user                 user                       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_user_learning_preferences_user_id")
+  settings             Json
+  created_at           DateTime?              @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime?              @default(now()) @db.Timestamptz(6)
+  preference_embedding Unsupported("vector")?
+  adaptation_metrics   Json?
+  user                 user                   @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_user_learning_preferences_user_id")
 
-  @@index([user_id], map: "idx_user_learning_preferences_user_id")
+  @@unique([user_id, preference_type, context_id])
+  @@index([preference_embedding], map: "idx_preference_embedding")
 }
 
-model verification {
-  id         String    @id
-  identifier String
-  value      String
-  expires_at DateTime  @db.Timestamp(6)
-  created_at DateTime? @db.Timestamp(6)
-  updated_at DateTime? @db.Timestamp(6)
-}
+// model verification {
+//   id         String   @id @default(cuid())
+//   identifier String // Usually the email
+//   value      String // Verification code or token
+//   expires_at DateTime @db.Timestamp(6)
+//   created_at DateTime @default(now()) @db.Timestamp(6)
+//   updated_at DateTime @default(now()) @updatedAt @db.Timestamp(6)
+//   @@index([identifier], map: "index_verification_identifier")
+//   @@index([identifier, value], map: "index_verification_identifier_value")
+// }
 
 /// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 enum content_generation_source {

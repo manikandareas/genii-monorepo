@@ -1,0 +1,24 @@
+meta {
+  name: GitHub OAuth Callback
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/auth/github/callback?code=example-code&state=example-state
+  body: none
+  auth: none
+}
+
+docs {
+  This endpoint handles the GitHub OAuth callback.
+
+  GitHub will redirect to this URL after the user authorizes the application.
+  The code and state parameters will be included in the query string.
+
+  The server will exchange the code for an access token and create or update the user in the database.
+  After successful authentication, the user will be redirected to the client application with access and refresh tokens.
+
+  Note: This request should not be called directly from Bruno as it requires a valid code from GitHub.
+  It's documented here for reference only.
+}

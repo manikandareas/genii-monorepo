@@ -1,7 +1,7 @@
 meta {
   name: Register
   type: http
-  seq: 1
+  seq: 2
 }
 
 post {
@@ -10,32 +10,26 @@ post {
   auth: none
 }
 
+headers {
+  Content-Type: application/json
+}
+
 body:json {
   {
     "name": "Test User",
     "email": "test@example.com",
-    "password": "Password123"
+    "password": "password123",
+    "username": "testuser"
   }
 }
 
 tests {
-  test("Status code is 201 or 200", function() {
-    expect(res.status).to.be.oneOf([200, 201]);
+  test("Status code is 201", function() {
+    expect(res.status).to.equal(201);
   });
 
-  test("Response has token", function() {
-    expect(res.body).to.have.property("token");
+  test("Response has message", function() {
+    expect(res.body).to.have.property("message");
+    expect(res.body.message).to.include("Registration successful");
   });
-
-  test("User data is returned", function() {
-    expect(res.body).to.have.property("user");
-    expect(res.body.user).to.have.property("id");
-    expect(res.body.user).to.have.property("name");
-    expect(res.body.user).to.have.property("email");
-  });
-
-  // Store token for other requests
-  if (res.body.token) {
-    bru.setEnvVar("authToken", res.body.token);
-  }
 }

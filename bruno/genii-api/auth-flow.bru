@@ -1,12 +1,20 @@
 meta {
-  name: Authentication Flow
+  name: Auth Flow
   type: collection
   seq: 1
 }
 
 collection {
-  auth/get-profile-unauthorized.bru
-  auth/register.bru
-  auth/login.bru
-  auth/get-profile.bru
+  order: [
+    "Register",
+    "Login",
+    "Get Profile",
+    "Refresh Token",
+    "Verify Email",
+    "Resend Verification Email",
+    "GitHub OAuth Login",
+    "GitHub OAuth Callback",
+    "Google OAuth Login",
+    "Google OAuth Callback"
+  ]
 }
