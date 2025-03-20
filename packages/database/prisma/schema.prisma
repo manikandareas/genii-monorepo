@@ -377,7 +377,7 @@ model subscriptions {
 }
 
 model units {
-  id                                       String             @id
+  id                                       Int                @id
   title                                    String
   type                                     unit_type
   order_index                              Int
