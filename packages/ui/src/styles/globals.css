@@ -14,7 +14,7 @@
 
   :root {
     /* Light Mode */
-    --background: oklch(1, 0, 0); /* emerald-50 */
+    --background: oklch(1, 1, 1); /* emerald-50 */
     --foreground: oklch(10% 0 0); /* very dark gray, almost black */
     --card: oklch(98.5% 0.012 166.1);
     --card-foreground: oklch(10% 0 0);
