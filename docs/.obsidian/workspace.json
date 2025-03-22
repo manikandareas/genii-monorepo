@@ -11,12 +11,10 @@
             "id": "6aa4c0d126b59832",
             "type": "leaf",
             "state": {
-              "type": "pdf",
-              "state": {
-                "file": "pages/Genii Client Pages.pdf"
-              },
-              "icon": "lucide-file-text",
-              "title": "Genii Client Pages"
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
             }
           }
         ]
@@ -170,6 +168,9 @@
   "lastOpenFiles": [
     "pages/User Pages.md",
     "pages/Genii Client Pages.pdf",
+    "feature-json-examples.md",
+    "pages/user-pages.md",
+    "authentication.md",
     "pages/feature-implementation.md",
     "adaptation-flow.md",
     "thesis/Thesis.md",
@@ -179,7 +180,6 @@
     "database-types.md",
     "pages/adaptation-architecture.md",
     "pages/a.md",
-    "pages/admin-pages.md",
-    "pages/user-pages.md"
+    "pages/admin-pages.md"
   ]
 }
