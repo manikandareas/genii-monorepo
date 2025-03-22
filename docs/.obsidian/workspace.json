@@ -11,14 +11,12 @@
             "id": "6aa4c0d126b59832",
             "type": "leaf",
             "state": {
-              "type": "markdown",
+              "type": "pdf",
               "state": {
-                "file": "pages/User Pages.md",
-                "mode": "preview",
-                "source": false
+                "file": "pages/Genii Client Pages.pdf"
               },
-              "icon": "lucide-file",
-              "title": "User Pages"
+              "icon": "lucide-file-text",
+              "title": "Genii Client Pages"
             }
           }
         ]
@@ -170,6 +168,7 @@
   },
   "active": "6aa4c0d126b59832",
   "lastOpenFiles": [
+    "pages/User Pages.md",
     "pages/Genii Client Pages.pdf",
     "pages/feature-implementation.md",
     "adaptation-flow.md",

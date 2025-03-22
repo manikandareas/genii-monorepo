@@ -433,3 +433,12 @@ export interface PersonalizationData {
   contentVersions: ContentVersion[];
   preferences: UserLearningPreference[];
 }
+
+export interface UserPreferences {
+  email: boolean;
+  push: boolean;
+  types: {
+    course_updates: boolean;
+    learning_reminders: boolean;
+  };
+}

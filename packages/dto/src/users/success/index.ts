@@ -56,3 +56,5 @@ export const TokenRefreshResponseSchema = z.object({
 });
 
 export type TokenRefreshResponse = z.infer<typeof TokenRefreshResponseSchema>;
+
+export type UserStrikes = {};

@@ -345,13 +345,6 @@
     "language": "English",
     "updatedAt": "2024-03-01"
   },
-  "instructor": {
-    "id": "inst_456",
-    "name": "John Doe",
-    "title": "Senior Frontend Engineer",
-    "bio": "10+ years of React experience",
-    "avatar": "https://example.com/avatar.jpg"
-  },
   "stats": {
     "enrolled": 1500,
     "completed": 750,
