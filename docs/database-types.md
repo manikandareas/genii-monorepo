@@ -43,6 +43,34 @@ enum QuizStatus {
   COMPLETED = 'COMPLETED',
   FAILED = 'FAILED'
 }
+
+// Activity Types
+enum ActivityType {
+  course_enrollment = 'course_enrollment',
+  content_viewed = 'content_viewed',
+  quiz_completed = 'quiz_completed',
+  note_created = 'note_created',
+  bookmark_created = 'bookmark_created',
+  personalization_applied = 'personalization_applied',
+  certificate_earned = 'certificate_earned'
+}
+
+// Banner Types
+enum BannerType {
+  info = 'info',
+  warning = 'warning',
+  success = 'success',
+  error = 'error',
+  promo = 'promo'
+}
+
+// Notification Action Types
+enum NotificationActionType {
+  navigate = 'navigate',
+  open_modal = 'open_modal',
+  dismiss = 'dismiss',
+  external_link = 'external_link'
+}
 ```
 
 ### New Personalization Enums
@@ -76,6 +104,22 @@ enum ContentStyle {
   example_based = 'example_based',
   project_based = 'project_based',
   interactive = 'interactive'
+}
+
+// Subscription Plans
+enum SubscriptionPlan {
+  free = 'free',
+  basic = 'basic',
+  premium = 'premium',
+  enterprise = 'enterprise'
+}
+
+// Personalization Trigger Types
+enum PersonalizationTrigger {
+  user_request = 'user_request',
+  performance_based = 'performance_based',
+  scheduled = 'scheduled',
+  system_recommendation = 'system_recommendation'
 }
 ```
 
@@ -163,7 +207,7 @@ type NewContentState = {
 #### Personalization Context
 ```typescript
 type PersonalizationContext = {
-  trigger: 'user_request' | 'performance_based';
+  trigger: PersonalizationTrigger;
   user_performance: {
     previous_quiz_scores: number[];
     average_completion_time: number;
@@ -214,6 +258,131 @@ type GenerationParameters = {
     max_tokens: number;
     special_instructions?: string[];
   };
+}
+```
+
+### New JSON Structures
+
+#### Learning Path Structure
+```typescript
+type PathSequence = {
+  courses: {
+    id: string;
+    order: number;
+    required: boolean;
+    estimated_duration: string;
+    prerequisites?: string[];
+  }[];
+  completion_requirements: {
+    min_courses_completed: number;
+    required_course_ids: string[];
+    final_assessment?: string;
+  };
+}
+```
+
+#### Notification Preferences
+```typescript
+type NotificationPreferences = {
+  email: boolean;
+  push: boolean;
+  types: {
+    quiz_reminders: boolean;
+    course_updates: boolean;
+    learning_reminders: boolean;
+    system_announcements?: boolean;
+    certificate_notifications?: boolean;
+  };
+  quiet_hours?: {
+    enabled: boolean;
+    start: string; // "22:00"
+    end: string; // "08:00"
+  };
+}
+```
+
+#### Banner Configuration
+```typescript
+type BannerConfiguration = {
+  id: string;
+  title: string;
+  content: string;
+  type: BannerType;
+  startDate: string; // ISO date string
+  endDate: string; // ISO date string
+  targetUsers: string[]; // ["all"] or specific user groups/ids
+  dismissible: boolean;
+  action?: {
+    label: string;
+    url: string;
+  };
+}
+```
+
+#### User Learning Insights
+```typescript
+type LearningInsights = {
+  learningPatterns: string[];
+  suggestedLearningPath?: string;
+  personalizedTips: string[];
+  strengths: string[];
+  areasForImprovement: string[];
+  recommendedTopics: string[];
+}
+```
+
+#### Subscription Features
+```typescript
+type SubscriptionFeatures = {
+  plan: SubscriptionPlan;
+  features: string[];
+  limits: {
+    courses_access: number | 'unlimited';
+    ai_personalization_quota: number;
+    download_access: boolean;
+    certificate_verification: boolean;
+  };
+  payment_method?: {
+    type: 'credit_card' | 'paypal' | 'bank_transfer';
+    lastFour?: string;
+    expiryDate?: string;
+  };
+}
+```
+
+#### User Activity Metadata
+```typescript
+type ActivityMetadata = {
+  // Common fields
+  duration?: number;
+  result?: string;
+
+  // For quiz_completed
+  score?: number;
+  timeSpent?: number;
+
+  // For content_viewed
+  progress?: number;
+  completionStatus?: string;
+
+  // For personalization_applied
+  previous_version_id?: string;
+  new_version_id?: string;
+
+  // For notes and bookmarks
+  position_in_content?: number;
+}
+```
+
+#### AI Generation Quota
+```typescript
+type AIGenerationQuota = {
+  userId: string;
+  monthlyLimit: number;
+  used: number;
+  remaining: number;
+  resetDate: string; // ISO date string
+  tierName: string;
 }
 ```
 
@@ -299,7 +468,8 @@ INSERT INTO personalization_history (
     module_id,
     previous_content_state,
     new_content_state,
-    personalization_context
+    personalization_context,
+    trigger_reason
 ) VALUES (
     'ph_123',
     'user_456',
@@ -356,7 +526,8 @@ INSERT INTO personalization_history (
             "total_units": 5,
             "current_progress": 0.4
         }
-    }'::jsonb
+    }'::jsonb,
+    'performance_threshold'
 );
 ```
 
@@ -367,7 +538,8 @@ SELECT
     module_id,
     previous_content_state,
     new_content_state,
-    created_at
+    created_at,
+    trigger_reason
 FROM personalization_history
 WHERE user_id = 'user_456'
 ORDER BY created_at DESC;
@@ -377,6 +549,7 @@ SELECT
     previous_content_state,
     new_content_state,
     personalization_context,
+    trigger_reason,
     created_at
 FROM personalization_history
 WHERE user_id = 'user_456'
@@ -395,7 +568,8 @@ INSERT INTO content_versions (
     content,
     is_default,
     generation_source,
-    generation_parameters
+    generation_parameters,
+    personalization_context
 ) VALUES (
     'cv_123',
     'unit_456',
@@ -425,38 +599,302 @@ INSERT INTO content_versions (
             "temperature": 0.7,
             "max_tokens": 2000
         }
+    }'::jsonb,
+    '{
+        "learningStyle": "visual",
+        "difficulty": "INTERMEDIATE",
+        "contentStyle": "practical"
     }'::jsonb
 );
 ```
 
-#### Query Content Versions
+### New Sample SQL Queries
+
+#### Working with Learning Paths
 ```sql
--- Get all versions for a unit
+-- Mark a category as a learning path
+UPDATE course_categories
+SET
+    is_learning_path = true,
+    path_sequence = '{
+        "courses": [
+            {
+                "id": "course_123",
+                "order": 1,
+                "required": true,
+                "estimated_duration": "4 weeks"
+            },
+            {
+                "id": "course_124",
+                "order": 2,
+                "required": true,
+                "estimated_duration": "3 weeks",
+                "prerequisites": ["course_123"]
+            }
+        ],
+        "completion_requirements": {
+            "min_courses_completed": 2,
+            "required_course_ids": ["course_123", "course_124"]
+        }
+    }'::jsonb,
+    estimated_completion = '8 weeks'
+WHERE id = 'cat_frontend';
+
+-- Query learning paths
+SELECT id, name, path_sequence, estimated_completion
+FROM course_categories
+WHERE is_learning_path = true;
+
+-- Get courses in a learning path
+SELECT
+    cc.name as path_name,
+    c.id as course_id,
+    c.title as course_title,
+    p.order as course_order,
+    p.required as is_required
+FROM course_categories cc
+CROSS JOIN LATERAL jsonb_to_recordset(cc.path_sequence->'courses') as
+    p(id text, order int, required boolean, estimated_duration text)
+JOIN courses c ON c.id = p.id
+WHERE cc.id = 'cat_frontend' AND cc.is_learning_path = true
+ORDER BY p.order;
+```
+
+#### Creating and Querying Recommendations
+```sql
+-- Insert a recommendation
+INSERT INTO recommendations (
+    id,
+    user_id,
+    course_id,
+    reason,
+    match_score
+) VALUES (
+    'rec_123',
+    'user_456',
+    'course_789',
+    'Based on your React learning progress',
+    0.89
+);
+
+-- Get recommendations for a user
+SELECT
+    r.id,
+    r.reason,
+    r.match_score,
+    c.title as course_title,
+    c.description as course_description,
+    c.difficulty as difficulty_level
+FROM recommendations r
+JOIN courses c ON r.course_id = c.id
+WHERE r.user_id = 'user_456'
+ORDER BY r.match_score DESC;
+
+-- Store AI-generated learning insights
+UPDATE "user"
+SET learning_insights = '{
+    "learningPatterns": ["Strong in frontend concepts", "Interested in TypeScript"],
+    "suggestedLearningPath": "Advanced Frontend Development",
+    "personalizedTips": [
+        "Consider exploring TypeScript for type-safe React development",
+        "Focus on state management patterns next"
+    ],
+    "strengths": ["hooks", "components"],
+    "areasForImprovement": ["performance"]
+}'::jsonb
+WHERE id = 'user_456';
+```
+
+#### Managing Notifications with Actions
+```sql
+-- Create a notification with action
+INSERT INTO notifications (
+    id,
+    user_id,
+    title,
+    message,
+    action_type,
+    action_url,
+    expires_at
+) VALUES (
+    'notif_123',
+    'user_456',
+    'Upcoming Quiz: React Hooks',
+    'You have a quiz due in 24 hours',
+    'navigate',
+    '/courses/course_123/quizzes/quiz_456',
+    NOW() + INTERVAL '24 hours'
+);
+
+-- Get active notifications with actions
 SELECT
     id,
-    content,
-    is_default,
-    generation_source,
-    generation_parameters
-FROM content_versions
-WHERE unit_id = 'unit_456'
+    title,
+    message,
+    action_type,
+    action_url,
+    created_at
+FROM notifications
+WHERE user_id = 'user_456'
+AND (expires_at IS NULL OR expires_at > NOW())
 ORDER BY created_at DESC;
 
--- Get default content
-SELECT id, content
-FROM content_versions
-WHERE unit_id = 'unit_456'
-AND is_default = true;
+-- Update user notification preferences
+UPDATE "user"
+SET notification_preferences = '{
+    "email": true,
+    "push": true,
+    "types": {
+        "quiz_reminders": true,
+        "course_updates": true,
+        "learning_reminders": true,
+        "system_announcements": false
+    },
+    "quiet_hours": {
+        "enabled": true,
+        "start": "22:00",
+        "end": "08:00"
+    }
+}'::jsonb
+WHERE id = 'user_456';
+```
 
--- Find similar content versions
-SELECT id, content, generation_parameters
-FROM content_versions
-WHERE unit_id = 'unit_456'
-AND generation_parameters->'target_audience'->>'technical_level' = 'INTERMEDIATE'
-AND generation_parameters->'content_requirements'->>'style' = 'practical';
+#### Working with Banners
+```sql
+-- Create a system banner
+INSERT INTO banners (
+    id,
+    title,
+    content,
+    banner_type,
+    start_date,
+    end_date,
+    target_users,
+    dismissible
+) VALUES (
+    'banner_123',
+    'New Course Available',
+    'Check out our new TypeScript course',
+    'info',
+    NOW(),
+    NOW() + INTERVAL '15 days',
+    '["all"]'::jsonb,
+    true
+);
 
--- Update usage count
-UPDATE content_versions
-SET usage_count = usage_count + 1
-WHERE id = 'cv_123';
+-- Get active banners for all users
+SELECT id, title, content, banner_type
+FROM banners
+WHERE start_date <= NOW()
+AND (end_date IS NULL OR end_date >= NOW())
+AND target_users ? 'all';
+```
+
+#### Subscription Management
+```sql
+-- Update subscription with features
+UPDATE subscriptions
+SET features = '{
+    "plan": "premium",
+    "features": [
+        "unlimited_courses",
+        "ai_personalization",
+        "certificate_verification"
+    ],
+    "limits": {
+        "courses_access": "unlimited",
+        "ai_personalization_quota": 50,
+        "download_access": true,
+        "certificate_verification": true
+    }
+}'::jsonb,
+payment_method = '{
+    "type": "credit_card",
+    "lastFour": "1234",
+    "expiryDate": "2025-12-31"
+}'::jsonb
+WHERE id = 'sub_123';
+
+-- Query premium features
+SELECT
+    user_id,
+    features->'plan' as plan,
+    features->'limits'->'ai_personalization_quota' as ai_quota
+FROM subscriptions
+WHERE features->'plan' = '"premium"'::jsonb;
+```
+
+#### User Activity Tracking
+```sql
+-- Record user activity
+INSERT INTO user_activity_log (
+    id,
+    user_id,
+    activity_type,
+    context_id,
+    metadata
+) VALUES (
+    'activity_123',
+    'user_456',
+    'quiz_completed',
+    'quiz_789',
+    '{
+        "score": 85,
+        "timeSpent": 1200,
+        "result": "passed"
+    }'::jsonb
+);
+
+-- Get user activity timeline
+SELECT
+    activity_type,
+    context_id,
+    metadata,
+    created_at
+FROM user_activity_log
+WHERE user_id = 'user_456'
+ORDER BY created_at DESC
+LIMIT 10;
+
+-- Get activity statistics
+SELECT
+    activity_type,
+    COUNT(*) as activity_count,
+    MAX(created_at) as latest_activity
+FROM user_activity_log
+WHERE user_id = 'user_456'
+GROUP BY activity_type
+ORDER BY latest_activity DESC;
+```
+
+#### AI Generation Quota Management
+```sql
+-- Update AI generation quota for a user
+INSERT INTO ai_generation_quota (
+    id,
+    user_id,
+    monthly_limit,
+    used_count,
+    reset_date
+) VALUES (
+    'quota_123',
+    'user_456',
+    50,
+    12,
+    (DATE_TRUNC('month', NOW()) + INTERVAL '1 month')::date
+)
+ON CONFLICT (user_id) DO UPDATE
+SET
+    monthly_limit = 50,
+    used_count = ai_generation_quota.used_count + 1;
+
+-- Check remaining quota
+SELECT
+    user_id,
+    monthly_limit,
+    used_count,
+    (monthly_limit - used_count) as remaining,
+    reset_date
+FROM ai_generation_quota
+WHERE user_id = 'user_456';
 ```
