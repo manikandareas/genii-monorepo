@@ -4,10 +4,15 @@ import { CourseInfoCard } from "./components/course-info-card";
 import { InfoCard } from "./components/info-card";
 import { ModuleAccordion } from "./components/module-accordion";
 import { ReviewSection } from "./components/review-section";
-import { courseData } from "./dummyData";
+import { courseData, userCourseProgress } from "./dummyData";
 
 export default function CourseDetailPage({ params }: { params: { courseId: string } }) {
   const { courseId } = params;
+  const userProgress = null;
+
+  // Find the last viewed unit for the continue learning button
+  // In a real app, this would come from the API along with userProgress
+  const lastUnitId = userProgress?.byModule[0]?.moduleId;
 
   return (
     <div className="container mx-auto px-4 py-8 min-h-[110vh] max-w-7xl">
@@ -58,6 +63,9 @@ export default function CourseDetailPage({ params }: { params: { courseId: strin
             averageRating={courseData.stats.averageRating}
             reviewCount={courseData.stats.reviewCount}
             completedCount={courseData.stats.completed}
+            userProgress={userProgress}
+            lastUnitId={lastUnitId}
+            courseId={courseId}
           />
 
           {/* Additional Info Cards */}

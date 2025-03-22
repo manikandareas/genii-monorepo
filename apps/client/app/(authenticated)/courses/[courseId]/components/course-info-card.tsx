@@ -1,5 +1,16 @@
-import { Button, Card, Badge } from "@genii/ui/components";
-import { Languages, Users, Calendar, Star, Share2, Bookmark, CheckCircle } from "lucide-react";
+import { Button, Card, Badge, Progress } from "@genii/ui/components";
+import {
+  Languages,
+  Users,
+  Calendar,
+  Star,
+  Share2,
+  Bookmark,
+  CheckCircle,
+  PlayCircle,
+} from "lucide-react";
+import { UserCourseProgress } from "@genii/dto";
+import Link from "next/link";
 
 type CourseInfoCardProps = {
   isPremium: boolean;
@@ -13,6 +24,9 @@ type CourseInfoCardProps = {
   averageRating: number;
   reviewCount: number;
   completedCount: number;
+  userProgress?: UserCourseProgress | null;
+  lastUnitId?: string;
+  courseId: string;
 };
 
 export function CourseInfoCard({
@@ -27,9 +41,28 @@ export function CourseInfoCard({
   averageRating,
   reviewCount,
   completedCount,
+  userProgress,
+  lastUnitId,
+  courseId,
 }: CourseInfoCardProps) {
+  const hasProgress = userProgress !== null && userProgress !== undefined;
+
   return (
     <Card className="p-6 border-none shadow-md bg-white transition-all hover:shadow-lg">
+      {/* Progress Bar */}
+      {hasProgress && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-muted-foreground">Your progress</span>
+            <span className="text-sm font-semibold">{userProgress.overall.percentage}%</span>
+          </div>
+          <Progress value={userProgress.overall.percentage} className="h-2" />
+          <p className="text-xs text-muted-foreground mt-2">
+            {userProgress.overall.completed} of {userProgress.overall.total} units completed
+          </p>
+        </div>
+      )}
+
       <div className="mb-6">
         <h2 className="text-3xl font-bold mb-1 flex items-center gap-2">
           {isPremium ? <span className="text-primary">Premium</span> : <span>Free</span>}
@@ -102,11 +135,22 @@ export function CourseInfoCard({
       </div>
 
       {/* Buttons */}
-      <div className="space-y-3">
-        <Button className="w-full bg-primary hover:bg-primary/90 text-white" size="lg">
-          Enroll now
-        </Button>
-        <div className="flex items-center gap-2">
+      <div>
+        {hasProgress ? (
+          <Link
+            href={`/courses/${courseId}/units/${lastUnitId || userProgress.byModule[0].moduleId}`}
+          >
+            <Button className="w-full bg-primary hover:bg-primary/90 text-white group" size="lg">
+              <PlayCircle className="h-5 w-5 mr-2 group-hover:animate-pulse" />
+              Continue Learning
+            </Button>
+          </Link>
+        ) : (
+          <Button className="w-full bg-primary hover:bg-primary/90 text-white" size="lg">
+            Enroll now
+          </Button>
+        )}
+        <div className="flex items-center gap-2 mt-3">
           <Button variant="outline" className="flex-1 hover:bg-gray-50" size="sm">
             <Share2 className="h-4 w-4 mr-2" />
             Share

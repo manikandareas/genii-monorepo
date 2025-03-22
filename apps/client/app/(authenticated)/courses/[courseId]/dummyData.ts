@@ -1,4 +1,4 @@
-import { CourseOverview } from "@genii/dto";
+import { CourseOverview, UserCourseProgress } from "@genii/dto";
 
 export const courseData: CourseOverview = {
   id: "advanced-3d-modelling",
@@ -162,4 +162,25 @@ export const courseData: CourseOverview = {
       user_id: "user_3",
     },
   ],
+};
+
+export const userCourseProgress: UserCourseProgress | null = {
+  overall: {
+    completed: 10,
+    total: 20,
+    percentage: 50,
+  },
+  byModule: [
+    {
+      moduleId: "module_1",
+      completed: 10,
+      total: 20,
+      percentage: 50,
+    },
+  ],
+  assessments: {
+    completed: 10,
+    total: 20,
+    averageScore: 50,
+  },
 };
