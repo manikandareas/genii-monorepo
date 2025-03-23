@@ -1,18 +1,8 @@
 "use client";
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@genii/ui/components";
 import { useState } from "react";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-  SheetHeader,
-  SheetTitle,
-} from "@genii/ui/components";
-import { Menu } from "lucide-react";
+import { MobileNavigation } from "../../components/mobile-navigation";
 import { ChapterContent } from "./components/chapter-content";
 import { CourseNavigation } from "./components/course-navigation";
 import { DiscussionPanel } from "./components/discussion-panel";
@@ -141,32 +131,18 @@ export default function DetailUnitPage() {
           courseId={courseId}
         />
 
-        {/* Mobile navigation toggle - only shown on mobile */}
-        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-          <SheetTrigger asChild>
-            <button className="lg:hidden p-2 rounded-md hover:bg-gray-100">
-              <Menu className="h-5 w-5" />
-              <span className="sr-only">Course navigation</span>
-            </button>
-          </SheetTrigger>
-          <SheetContent side="bottom" className="p-0 w-full sm:w-[350px]">
-            <SheetHeader className="sr-only">
-              <SheetTitle>Course navigation</SheetTitle>
-            </SheetHeader>
-            <div className="h-full overflow-y-auto">
-              <CourseNavigation
-                modules={MOCK_MODULES}
-                currentModuleId={currentModuleId}
-                currentUnitId={currentUnitId}
-                courseId={courseId}
-                courseName={courseName}
-                overallProgress={overallProgress}
-                isMobileSheet={true}
-                onClose={() => setSheetOpen(false)}
-              />
-            </div>
-          </SheetContent>
-        </Sheet>
+        <MobileNavigation isOpen={sheetOpen} onOpenChange={setSheetOpen} title="Course navigation">
+          <CourseNavigation
+            modules={MOCK_MODULES}
+            currentModuleId={currentModuleId}
+            currentUnitId=""
+            courseId={courseId}
+            courseName={courseName}
+            overallProgress={overallProgress}
+            isMobileSheet={true}
+            onClose={() => setSheetOpen(false)}
+          />
+        </MobileNavigation>
       </div>
 
       <div className="flex flex-col lg:grid lg:grid-cols-6 gap-4 md:gap-6">

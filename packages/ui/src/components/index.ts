@@ -10,3 +10,4 @@ export * from "./popover";
 export * from "./progress";
 export * from "./sheet";
 export * from "./tabs";
+export * from "./sliding-number";
